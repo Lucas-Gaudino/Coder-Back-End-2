@@ -1,29 +1,37 @@
+//Instancias de creacion de server con express y Socket.io
 import express from "express";
-import { CreateServer } from "http";
+import {createServer} from "http";
+import  { engine } from "express-handlebars";
 import { Server } from "socket.io";
 
-import productosAPIRouter from "./router/productos.js";
 
+//Rutas de los productos
+import productosApiRouter from "./routes/product.js";
+
+//Creacion de server
 const app = express();
-// creo los sockets y los server
-const PORT = 8080;
-const httpServer = CreateServer(app);
-const io = new Server(httpServer);
+const httpServer  = createServer(app);
+const io = new Server(httpServer );
 
-// iniciamos el servidor
-httpServer.listen(PORT, () => {
-    console.log(`Servidor http escuchando en el puerto ${PORT}`);
-    });
-//dirname
+//inicio de servidor 
+const PORT = 8080;
+httpServer.listen(process.env.PORT || PORT, () =>
+  console.log("Servidor Funcionando en Puerto: " + PORT)
+);
+httpServer.on("error", (error) => console.log(`Error en servidor ${error}`));
+
+
+//Configuracion de las direccioens y carpetas publicas
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-const __filename = dirname(fileURLToPath(import.meta.url));
-export const __dirname = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+export const __dirname = dirname(__filename);
+app.use(express.static(__dirname + "/public"));
 
-// inicializo el servidor de express
+//app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+//setear engine de plantillas handlebars
 app.set('view engine', 'hbs');
 app.set('views', './views');
 app.engine(
@@ -36,18 +44,15 @@ app.engine(
   })
 );
 
-//ruta para el index
+//Rutas de los productos
+app.use("/api/productos", productosApiRouter);
+
+//Ruta de la pagina principal
 app.get("/", (req, res) => {
-    res.render("index", { title : "Home" });
-});
-// rutas 
-import { router as productosRouter } from "./router/productos.js";
-//rutas
-app.use("/api/productos", productosAPIRouter);
+    res.render('productslist');
+    }
+);
 
-
-
-
-//configuracion de socket
+//Configuracion de Socket
 import { socketModel } from "./src/utils/socket.js";
 socketModel(io);
